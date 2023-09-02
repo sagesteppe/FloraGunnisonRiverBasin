@@ -1,0 +1,30 @@
+---
+title: "Create Geographic Extent"
+author: "steppe"
+date: "2023-09-02"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+library(sf)
+library(terra)
+library(whitebox)
+```
+
+
+```{r process dem to create basins}
+p2dem <- '../data/raw/geodata/dem'
+dem <- mosaic(sprc(file.path(p2dem, list.files(p2dem))))
+wbt_breach_depressions(dem, output = file.path(p2dem, 'Breached.tif'))
+wbt_d8_pointer(file.path(p2dem, 'Breached.tif'), output = file.path(p2dem, 'D8.tif'))
+wbt_basins(file.path(p2dem, 'D8.tif'), output = file.path(p2dem, 'Basins.tif'))
+```
+
+```{r use higher resolution NHD data to define drainages}
+watershed <- st_read('../data/raw/geodata/WBD_14_HU2_Shape/Shape/WBDHU12.shp') 
+
+
+ggplot() +
+  geom_sf(data = watershed)
+```
