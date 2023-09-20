@@ -14,3 +14,4 @@ watershed <- st_read('../data/raw/geodata/WBD_14_HU2_Shape/Shape/WBDHU12.shp') %
 
 ggplot() +
   geom_sf(data = watershed)
+

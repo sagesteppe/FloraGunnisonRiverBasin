@@ -4,27 +4,67 @@ author: "steppe"
 date: "2023-09-02"
 output: html_document
 ---
-
-```{r}
+ 
+```{r load libraries and import functions}
 library(tidyverse)
 library(sf)
-library(terra)
-library(whitebox)
+source('functions.R')
 ```
 
+The first step in generating a species list for the entirety of the Gunnison Basin is to create a spatial extent which represents the study area. Here we use the (Major River Basin Boundaries)[https://cdss.colorado.gov/gis-data/gis-data-by-category] from the Colorado Decision Support System on September 19, 2023. 
 
-```{r process dem to create basins}
-p2dem <- '../data/raw/geodata/dem'
-dem <- mosaic(sprc(file.path(p2dem, list.files(p2dem))))
-wbt_breach_depressions(dem, output = file.path(p2dem, 'Breached.tif'))
-wbt_d8_pointer(file.path(p2dem, 'Breached.tif'), output = file.path(p2dem, 'D8.tif'))
-wbt_basins(file.path(p2dem, 'D8.tif'), output = file.path(p2dem, 'Basins.tif'))
+```{r Identify drainage area}
+
+watershed <- st_read('../data/raw/geodata/All_River_Basins/All_River_Basins.shp', quiet = T)  %>% 
+  filter(HU6NAME == 'Gunnison')
+
 ```
 
-```{r use higher resolution NHD data to define drainages}
-watershed <- st_read('../data/raw/geodata/WBD_14_HU2_Shape/Shape/WBDHU12.shp') 
+These data were subset to the Gunnison Basin, buffered by 10km, and then a convex hull was rendered around the extent. 
+The convex hull was used to simplify the shape for geospatial requests to subsequent databases, allowing for faster processing times. 
+The hull was then separated into four parts, using st_make_grid from the sf package, to allow for parcels sizes appropriate for query with the SORO herbarium consortia. 
 
+```{r create grids for soro download, eval = F}
+
+ws_buf <- st_buffer(watershed, 10000) %>% 
+  st_convex_hull()
+
+cells <- st_make_grid(ws_buf, n = c(2,2)) %>% 
+  st_intersection(., ws_buf) %>% 
+  st_transform(4326)
 
 ggplot() +
-  geom_sf(data = watershed)
+  geom_sf(data = watershed) +
+  geom_sf(data = cells)
+
 ```
+
+These shapes were converted into well-known-text (WKT) format using the st_as_text function. 
+
+```{r create well known text for soro download, eval = F}
+wkt <- st_as_text(cells)
+
+coords <- lapply(wkt, lat_first)
+coords <- unlist(coords)
+write.table(coords, file = '../data/processed/wkt_boundaries.txt', col.names = F, row.names = F, quote = F)
+```
+
+In order to characterize species occurrences at finer resolutions the USGS National Hydrologic Database was intersected to the extent of the Gunnison Basin.
+
+```{r subset data to fine resolution drainages, eval = F}
+
+fine_watersheds <- st_read('../data/raw/geodata/WBD_14_HU2_Shape/Shape/WBDHU12.shp', quiet = T) 
+watershed <- st_transform(watershed, st_crs(fine_watersheds))
+
+fine_watersheds <- st_intersection(watershed, fine_watersheds) %>% 
+  select(name)
+
+ggplot() +
+  geom_sf(data = fine_watersheds)
+
+dir.create('../data/processed/fine_watersheds')
+st_write(fine_watersheds, '../data/processed/fine_watersheds/fine_watersheds.shp')
+
+rm(fine_watersheds, watershed)
+```
+
