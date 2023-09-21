@@ -1,0 +1,35 @@
+---
+title: "download and clean occurrence data"
+author: "steppe"
+date: "2023-09-20"
+output: pdf_document
+---
+
+```{r}
+library(tidyverse)
+library(rgbif)
+library(BIEN)
+```
+
+```{r import spatial data, eval = F}
+watershed <- st_read('../data/raw/geodata/All_River_Basins/All_River_Basins.shp', quiet = T)  %>% 
+  filter(HU6NAME == 'Gunnison') %>% 
+  st_buffer(10000) %>% 
+  st_convex_hull() %>% 
+  st_transform(4326)
+```
+
+```{r conduct BIEN query, eval = F}
+occurrences <- BIEN_occurrence_sf(watershed)
+st_write(occurrences, '../data/raw/occurrence_data/BIEN.shp', append = F)
+```
+
+```{r import AIM data}
+
+```
+
+```{r conduct gbif query, eval = F}
+
+```
+
+

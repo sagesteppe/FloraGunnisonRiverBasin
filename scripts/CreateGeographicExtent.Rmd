@@ -11,7 +11,7 @@ library(sf)
 source('functions.R')
 ```
 
-The first step in generating a species list for the entirety of the Gunnison Basin is to create a spatial extent which represents the study area. Here we use the (Major River Basin Boundaries)[https://cdss.colorado.gov/gis-data/gis-data-by-category] from the Colorado Decision Support System on September 19, 2023. 
+The first step in generating a species list for the entirety of the Gunnison Basin is to create a spatial extent which represents the study area. Here we use the (Major River Basin Boundaries)[https://cdss.colorado.gov/gis-data/gis-data-by-category] from the Colorado Decision Support System on September 19, 2023.
 
 ```{r Identify drainage area}
 
@@ -22,7 +22,7 @@ watershed <- st_read('../data/raw/geodata/All_River_Basins/All_River_Basins.shp'
 
 These data were subset to the Gunnison Basin, buffered by 10km, and then a convex hull was rendered around the extent. 
 The convex hull was used to simplify the shape for geospatial requests to subsequent databases, allowing for faster processing times. 
-The hull was then separated into four parts, using st_make_grid from the sf package, to allow for parcels sizes appropriate for query with the SORO herbarium consortia. 
+The hull was then separated into four parts, using 'st_make_grid' from the sf package, to allow for parcels sizes appropriate for query with the SORO herbarium consortia. 
 
 ```{r create grids for soro download, eval = F}
 
@@ -39,7 +39,9 @@ ggplot() +
 
 ```
 
-These shapes were converted into well-known-text (WKT) format using the st_as_text function. 
+These shapes were converted into well-known-text (WKT) format using the 'st_as_text' function. 
+These four shapes were then manually queried into the Consortium of Southern Rockies herbaria by hand, because support for an API was undocumented. 
+The data were downloaded as Symbiota native, without image records, occurrence traits attributes, or material samples as ISO-8859-1 for compliance with the R statistical language.
 
 ```{r create well known text for soro download, eval = F}
 wkt <- st_as_text(cells)
